@@ -4,6 +4,20 @@
     <Platform Name="Default" />
   </Configurations>
   <Folder Name="/Solution Items/" />
+  <Folder Name="/Querys/">
+    <File Path="01-ScriptCreacionTablasYSchemas.sql" />
+    <File Path="02-ScriptABM_SPs.sql" />
+    <File Path="03-ScriptLogicaNegocio_SPs.sql" />
+    <File Path="04-ScriptEstadisticasVisitantes.sql" />
+    <File Path="05-ScriptOrganizacionesDistinguidas.sql" />
+    <File Path="06-ScriptAreasProtegidas.sql" />
+    <File Path="07-ScriptReportes_SPs.sql" />
+  </Folder>
+  <Folder Name="/Tests/">
+    <File Path="02-ScriptTestingABM.sql" />
+    <File Path="03-ScriptTestingLogicaNegocio.sql" />
+    <File Path="07-ScriptTestingReportes.sql" />
+  </Folder>
   <Project Path="TP-BDDA-GRUPO11.ssmssqlproj" Type="4f2e2c19-372f-40d8-9fa7-9d2138c6997a">
     <Platform Project="?" />
     <Build Project="false" />
