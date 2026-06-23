@@ -164,7 +164,13 @@ BEGIN
 
         COMMIT TRANSACTION;
 
-        SELECT @id_ticket AS id_ticket_generado;
+        -- Se retorna el total en pesos y su equivalente en dólares según la
+        -- cotización vigente (útil al cobrar a visitantes no residentes).
+        -- La cotización se obtiene con ventas.CotizacionDolarActualizar (API).
+        SELECT @id_ticket                            AS id_ticket_generado,
+               @p_total                              AS total_ars,
+               ventas.fn_ConvertirArsAUsd(@p_total)  AS total_usd,
+               ventas.fn_CotizacionVigente()         AS cotizacion_usd_aplicada;
     END TRY
     BEGIN CATCH
         IF XACT_STATE() != 0 ROLLBACK TRANSACTION;
