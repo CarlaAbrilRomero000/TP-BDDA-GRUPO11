@@ -12,11 +12,16 @@
     <File Path="05-ScriptOrganizacionesDistinguidas.sql" />
     <File Path="06-ScriptAreasProtegidas.sql" />
     <File Path="07-ScriptReportes_SPs.sql" />
+    <File Path="08-ScriptAPI_Cotizacion_SPs.sql" />
   </Folder>
   <Folder Name="/Tests/">
+    <File Path="../../../../../../Downloads/04-ScriptTestingEstadisticasVisitantes.sql" />
+    <File Path="../../../../../../Downloads/05-ScriptTestingOrganizacionesDistinguidas.sql" />
+    <File Path="../../../../../../Downloads/06-ScriptTestingAreasProtegidas.sql" />
     <File Path="02-ScriptTestingABM.sql" />
     <File Path="03-ScriptTestingLogicaNegocio.sql" />
     <File Path="07-ScriptTestingReportes.sql" />
+    <File Path="08-ScriptTesting_API_Cotizacion.sql" />
   </Folder>
   <Project Path="TP-BDDA-GRUPO11.ssmssqlproj" Type="4f2e2c19-372f-40d8-9fa7-9d2138c6997a">
     <Platform Project="?" />
