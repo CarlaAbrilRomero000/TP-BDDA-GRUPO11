@@ -44,7 +44,7 @@ BEGIN
         Parque, Anio, Mes, Semana;
 END;
 GO
-PRINT 'OK - Store Procedure dbo.Reporte_Visitas creado/actualizado con éxito.';
+PRINT 'OK - Store Procedure dbo.Reporte_Visitas creado/actualizado con exito.';
 GO
 
 
@@ -101,7 +101,7 @@ BEGIN
     ORDER BY Parque, Anio, Mes, Semana;
 END;
 GO
-PRINT 'OK - Store Procedure dbo.Ingresos_Parque creado/actualizado con éxito.';
+PRINT 'OK - Store Procedure dbo.Ingresos_Parque creado/actualizado con exito.';
 GO
 
 
@@ -131,7 +131,7 @@ BEGIN
     FOR XML PATH('Deudor'), ROOT('ReporteDeudores');
 END;
 GO
-PRINT 'OK - Store Procedure dbo.Deudores_XML creado/actualizado con éxito.';
+PRINT 'OK - Store Procedure dbo.Deudores_XML creado/actualizado con exito.';
 GO
 
 
@@ -141,33 +141,43 @@ GO
 PRINT 'Creando o actualizando Store Procedure dbo.Matriz_Visitas...';
 GO
 CREATE OR ALTER PROCEDURE dbo.Matriz_Visitas
-    @Anio INT = NULL -- Parámetro opcional para filtrar por año
+    @Anio INT = NULL -- Parametro opcional para filtrar por año
 AS
 BEGIN
     SET NOCOUNT ON;
 
     SELECT 
-        p.nombre AS Parque,
-        SUM(CASE WHEN MONTH(td.fecha_acceso) = 1 THEN td.cantidad ELSE 0 END) AS Ene,
-        SUM(CASE WHEN MONTH(td.fecha_acceso) = 2 THEN td.cantidad ELSE 0 END) AS Feb,
-        SUM(CASE WHEN MONTH(td.fecha_acceso) = 3 THEN td.cantidad ELSE 0 END) AS Mar,
-        SUM(CASE WHEN MONTH(td.fecha_acceso) = 4 THEN td.cantidad ELSE 0 END) AS Abr,
-        SUM(CASE WHEN MONTH(td.fecha_acceso) = 5 THEN td.cantidad ELSE 0 END) AS May,
-        SUM(CASE WHEN MONTH(td.fecha_acceso) = 6 THEN td.cantidad ELSE 0 END) AS Jun,
-        SUM(CASE WHEN MONTH(td.fecha_acceso) = 7 THEN td.cantidad ELSE 0 END) AS Jul,
-        SUM(CASE WHEN MONTH(td.fecha_acceso) = 8 THEN td.cantidad ELSE 0 END) AS Ago,
-        SUM(CASE WHEN MONTH(td.fecha_acceso) = 9 THEN td.cantidad ELSE 0 END) AS Sep,
-        SUM(CASE WHEN MONTH(td.fecha_acceso) = 10 THEN td.cantidad ELSE 0 END) AS Oct,
-        SUM(CASE WHEN MONTH(td.fecha_acceso) = 11 THEN td.cantidad ELSE 0 END) AS Nov,
-        SUM(CASE WHEN MONTH(td.fecha_acceso) = 12 THEN td.cantidad ELSE 0 END) AS Dic
-    FROM ventas.TicketDetalle td
-    JOIN parques.Parque p ON td.id_parque = p.id_parque
-    WHERE (@Anio IS NULL OR YEAR(td.fecha_acceso) = @Anio) -- Aplica el filtro si se envía el parámetro
-    GROUP BY p.nombre
-    ORDER BY p.nombre;
+        Parque,
+        ISNULL([1], 0) AS Ene,
+        ISNULL([2], 0) AS Feb,
+        ISNULL([3], 0) AS Mar,
+        ISNULL([4], 0) AS Abr,
+        ISNULL([5], 0) AS May,
+        ISNULL([6], 0) AS Jun,
+        ISNULL([7], 0) AS Jul,
+        ISNULL([8], 0) AS Ago,
+        ISNULL([9], 0) AS Sep,
+        ISNULL([10], 0) AS Oct,
+        ISNULL([11], 0) AS Nov,
+        ISNULL([12], 0) AS Dic
+    FROM (
+        -- Origen de datos para el Pivot
+        SELECT 
+            p.nombre AS Parque,
+            MONTH(td.fecha_acceso) AS Mes,
+            td.cantidad
+        FROM ventas.TicketDetalle td
+        JOIN parques.Parque p ON td.id_parque = p.id_parque
+        WHERE (@Anio IS NULL OR YEAR(td.fecha_acceso) = @Anio)
+    ) AS DatosOrigen
+    PIVOT (
+        SUM(cantidad)
+        FOR Mes IN ([1], [2], [3], [4], [5], [6], [7], [8], [9], [10], [11], [12])
+    ) AS TablaPivot
+    ORDER BY Parque;
 END;
 GO
-PRINT 'OK - Store Procedure dbo.Matriz_Visitas creado/actualizado con éxito.';
+PRINT 'OK - Store Procedure dbo.Matriz_Visitas creado/actualizado con exito.';
 GO
 
 
@@ -197,7 +207,7 @@ BEGIN
     FOR XML PATH('Parque'), ROOT('SistemaParques');
 END;
 GO
-PRINT 'OK - Store Procedure dbo.Parques_Concesiones_XML creado/actualizado con éxito.';
+PRINT 'OK - Store Procedure dbo.Parques_Concesiones_XML creado/actualizado con exito.';
 GO
 
 PRINT '=========================================================================';
