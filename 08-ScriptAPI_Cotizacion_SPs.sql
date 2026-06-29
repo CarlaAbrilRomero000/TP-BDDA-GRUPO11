@@ -25,21 +25,22 @@ Descripción: Consumo de API externa de cotización de moneda extranjera
              }
 
              Objetos incluidos:
-             1. ventas.CotizacionDolar (tabla)
-                Histórico de cotizaciones obtenidas desde la API.
+             NOTA: La tabla ventas.CotizacionDolar se crea en el script 01
+             y sus operaciones ABM están en el script 02. Este script solo
+             contiene la lógica de consumo de la API y los reportes.
 
-             2. ventas.CotizacionDolarActualizar (SP)
+             1. ventas.CotizacionDolarActualizar (SP)
                 Consume la API, interpreta el JSON y registra una nueva
                 cotización. Retorna la fila insertada.
 
-             3. ventas.fn_CotizacionVigente (función)
+             2. ventas.fn_CotizacionVigente (función)
                 Devuelve el valor de venta de la última cotización registrada.
 
-             4. ventas.fn_ConvertirArsAUsd (función)
+             3. ventas.fn_ConvertirArsAUsd (función)
                 Convierte un monto en pesos a dólares usando la cotización
                 vigente (valor de venta).
 
-             5. dbo.Ingresos_Parque_USD (SP)
+             4. dbo.Ingresos_Parque_USD (SP)
                 Variante del reporte de ingresos que agrega las columnas
                 equivalentes en dólares.
 =============================================================================
@@ -77,26 +78,13 @@ GO
 
 -- =========================================================================
 -- 1. TABLA: ventas.CotizacionDolar
---    Persiste cada cotización obtenida desde la API (caché + auditoría).
+--    La tabla se crea en el script 01-ScriptCreacionTablasYSchemas.sql
+--    (sección "TABLAS DE CONSUMO DE APIs EXTERNAS") y sus operaciones ABM
+--    están en el script 02-ScriptABM_SPs.sql. Debe existir antes de
+--    ejecutar este script.
 -- =========================================================================
 IF NOT EXISTS (SELECT 1 FROM sys.tables WHERE name = 'CotizacionDolar' AND schema_id = SCHEMA_ID('ventas'))
-BEGIN
-    PRINT 'Creando tabla ventas.CotizacionDolar...';
-    CREATE TABLE ventas.CotizacionDolar (
-        id_cotizacion       INT IDENTITY(1,1) PRIMARY KEY,
-        moneda              VARCHAR(10)   NOT NULL,
-        casa                VARCHAR(20)   NOT NULL,
-        nombre              VARCHAR(50)   NULL,
-        compra              DECIMAL(12,4) NOT NULL,
-        venta               DECIMAL(12,4) NOT NULL,
-        fecha_actualizacion DATETIME2     NULL,   -- fechaActualizacion informada por la API
-        fecha_consulta      DATETIME2     NOT NULL CONSTRAINT DF_CotizacionDolar_FechaConsulta DEFAULT (SYSDATETIME()),
-        CONSTRAINT CK_CotizacionDolar_Compra CHECK (compra > 0),
-        CONSTRAINT CK_CotizacionDolar_Venta  CHECK (venta  > 0)
-    );
-END
-ELSE
-    PRINT 'OK - Tabla ventas.CotizacionDolar ya existe, se omite creación.';
+    THROW 50001, N'Falta la tabla ventas.CotizacionDolar. Ejecute primero el script 01-ScriptCreacionTablasYSchemas.sql.', 1;
 GO
 
 -- =========================================================================

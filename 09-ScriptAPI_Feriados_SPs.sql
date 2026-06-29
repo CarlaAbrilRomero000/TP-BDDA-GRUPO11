@@ -30,20 +30,21 @@ Descripción: Consumo de API externa de feriados de Argentina para el cálculo
              ]
 
              Objetos incluidos:
-             1. ventas.Feriado (tabla)
-                Histórico de feriados obtenidos desde la API.
+             NOTA: La tabla ventas.Feriado se crea en el script 01 y sus
+             operaciones ABM están en el script 02. Este script solo contiene
+             la lógica de consumo de la API y el cálculo de entradas.
 
-             2. ventas.FeriadosActualizar (SP)
+             1. ventas.FeriadosActualizar (SP)
                 Consume la API para un año dado, interpreta el JSON y
                 sincroniza (upsert) los feriados. Retorna las filas vigentes.
 
-             3. ventas.fn_EsFeriado (función)
+             2. ventas.fn_EsFeriado (función)
                 Indica si una fecha dada es feriado registrado.
 
-             4. ventas.fn_PrecioEntradaConFeriado (función)
+             3. ventas.fn_PrecioEntradaConFeriado (función)
                 Aplica el recargo por feriado al valor de una entrada.
 
-             5. ventas.CalcularValorEntrada (SP)
+             4. ventas.CalcularValorEntrada (SP)
                 Calcula el valor final de una entrada para un parque, tipo de
                 visitante y fecha, considerando el recargo por feriado.
 =============================================================================
@@ -81,25 +82,13 @@ GO
 
 -- =========================================================================
 -- 1. TABLA: ventas.Feriado
---    Persiste cada feriado obtenido desde la API (caché + auditoría).
---    La fecha es única: una nueva consulta actualiza los datos existentes.
+--    La tabla se crea en el script 01-ScriptCreacionTablasYSchemas.sql
+--    (sección "TABLAS DE CONSUMO DE APIs EXTERNAS") y sus operaciones ABM
+--    están en el script 02-ScriptABM_SPs.sql. Debe existir antes de
+--    ejecutar este script.
 -- =========================================================================
 IF NOT EXISTS (SELECT 1 FROM sys.tables WHERE name = 'Feriado' AND schema_id = SCHEMA_ID('ventas'))
-BEGIN
-    PRINT 'Creando tabla ventas.Feriado...';
-    CREATE TABLE ventas.Feriado (
-        id_feriado     INT IDENTITY(1,1) PRIMARY KEY,
-        fecha          DATE          NOT NULL,
-        nombre         VARCHAR(150)  NULL,   -- nombre informado por la API
-        tipo           VARCHAR(50)   NULL,   -- tipo informado por la API (inamovible, trasladable, etc.)
-        anio           SMALLINT      NOT NULL,
-        fecha_consulta DATETIME2     NOT NULL CONSTRAINT DF_Feriado_FechaConsulta DEFAULT (SYSDATETIME()),
-        CONSTRAINT UQ_Feriado_Fecha UNIQUE (fecha),
-        CONSTRAINT CK_Feriado_Anio CHECK (anio BETWEEN 2000 AND 2100)
-    );
-END
-ELSE
-    PRINT 'OK - Tabla ventas.Feriado ya existe, se omite creación.';
+    THROW 50020, N'Falta la tabla ventas.Feriado. Ejecute primero el script 01-ScriptCreacionTablasYSchemas.sql.', 1;
 GO
 
 -- =========================================================================

@@ -1000,6 +1000,115 @@ SELECT g.nombre + ' ' + g.apellido AS guardaparque_prueba,
 FROM personal.Guardaparque g WHERE g.dni = '30111222';
 
 GO
+
+-- ==============================================================
+PRINT '';
+PRINT '==============================================================';
+PRINT ' SECCIÓN 7 — ABM DE TABLAS DE APIs EXTERNAS (Entregas 8 y 9)';
+PRINT '==============================================================';
+GO
+
+DECLARE
+    @id_cotizacion INT,
+    @id_feriado    INT;
+
+-- ---------------------------------------------------------------
+PRINT '--- TEST API-01: Insertar CotizacionDolar ---';
+-- ---------------------------------------------------------------
+EXEC ventas.CotizacionDolarInsertar
+    @p_moneda              = 'USD',
+    @p_casa                = 'oficial',
+    @p_compra              = 1000.0000,
+    @p_venta               = 1050.0000,
+    @p_nombre              = 'Oficial TEST',
+    @p_fecha_actualizacion = '2026-06-28T18:00:00';
+SELECT @id_cotizacion = id_cotizacion
+FROM ventas.CotizacionDolar WHERE nombre = 'Oficial TEST';
+PRINT 'OK — CotizacionDolar insertada. ID: ' + CAST(@id_cotizacion AS VARCHAR(10));
+SELECT 'Alta CotizacionDolar' AS evidencia, id_cotizacion, moneda, casa, nombre, compra, venta
+FROM ventas.CotizacionDolar WHERE id_cotizacion = @id_cotizacion;
+
+-- ---------------------------------------------------------------
+PRINT '--- TEST API-02: Modificar CotizacionDolar ---';
+-- ---------------------------------------------------------------
+EXEC ventas.CotizacionDolarModificar
+    @p_id_cotizacion       = @id_cotizacion,
+    @p_moneda              = 'USD',
+    @p_casa                = 'oficial',
+    @p_compra              = 1100.0000,
+    @p_venta               = 1180.0000,
+    @p_nombre              = 'Oficial TEST',
+    @p_fecha_actualizacion = '2026-06-28T19:00:00';
+PRINT 'OK — CotizacionDolar modificada.';
+SELECT 'Modificación CotizacionDolar' AS evidencia, id_cotizacion, compra, venta
+FROM ventas.CotizacionDolar WHERE id_cotizacion = @id_cotizacion;
+
+-- ---------------------------------------------------------------
+PRINT '--- TEST API-03: Insertar CotizacionDolar con venta inválida (caso de error) ---';
+-- ---------------------------------------------------------------
+BEGIN TRY
+    EXEC ventas.CotizacionDolarInsertar
+        @p_moneda = 'USD', @p_casa = 'oficial', @p_compra = 1000, @p_venta = 0;
+    PRINT 'ATENCIÓN — No se detectó la validación de venta > 0.';
+END TRY
+BEGIN CATCH
+    PRINT 'OK — Validación detectada: ' + ERROR_MESSAGE();
+END CATCH
+
+-- ---------------------------------------------------------------
+PRINT '--- TEST API-04: Insertar Feriado ---';
+-- ---------------------------------------------------------------
+EXEC ventas.FeriadoInsertar
+    @p_fecha  = '2026-12-08',
+    @p_nombre = 'Inmaculada Concepción TEST',
+    @p_tipo   = 'inamovible';
+SELECT @id_feriado = id_feriado
+FROM ventas.Feriado WHERE fecha = '2026-12-08';
+PRINT 'OK — Feriado insertado. ID: ' + CAST(@id_feriado AS VARCHAR(10));
+SELECT 'Alta Feriado' AS evidencia, id_feriado, fecha, nombre, tipo, anio
+FROM ventas.Feriado WHERE id_feriado = @id_feriado;
+
+-- ---------------------------------------------------------------
+PRINT '--- TEST API-05: Modificar Feriado ---';
+-- ---------------------------------------------------------------
+EXEC ventas.FeriadoModificar
+    @p_id_feriado = @id_feriado,
+    @p_fecha      = '2026-12-08',
+    @p_nombre     = 'Inmaculada Concepción de María TEST',
+    @p_tipo       = 'inamovible';
+PRINT 'OK — Feriado modificado.';
+SELECT 'Modificación Feriado' AS evidencia, id_feriado, fecha, nombre
+FROM ventas.Feriado WHERE id_feriado = @id_feriado;
+
+-- ---------------------------------------------------------------
+PRINT '--- TEST API-06: Insertar Feriado con fecha duplicada (caso de error) ---';
+-- ---------------------------------------------------------------
+BEGIN TRY
+    EXEC ventas.FeriadoInsertar @p_fecha = '2026-12-08', @p_nombre = 'Duplicado TEST';
+    PRINT 'ATENCIÓN — No se detectó la validación de fecha duplicada.';
+END TRY
+BEGIN CATCH
+    PRINT 'OK — Validación detectada: ' + ERROR_MESSAGE();
+END CATCH
+
+-- ---------------------------------------------------------------
+PRINT '--- TEST API-07: Baja de los registros de prueba ---';
+-- ---------------------------------------------------------------
+EXEC ventas.FeriadoEliminar @p_id_feriado = @id_feriado;
+PRINT 'OK — Feriado eliminado.';
+EXEC ventas.CotizacionDolarEliminar @p_id_cotizacion = @id_cotizacion;
+PRINT 'OK — CotizacionDolar eliminada.';
+
+-- Evidencia de limpieza
+SELECT CASE WHEN COUNT(*) = 0 THEN 'OK — Sin registros TEST en CotizacionDolar'
+            ELSE 'ATENCIÓN — Quedan ' + CAST(COUNT(*) AS VARCHAR) + ' registros' END AS resultado
+FROM ventas.CotizacionDolar WHERE nombre LIKE '%TEST%';
+
+SELECT CASE WHEN COUNT(*) = 0 THEN 'OK — Sin registros TEST en Feriado'
+            ELSE 'ATENCIÓN — Quedan ' + CAST(COUNT(*) AS VARCHAR) + ' registros' END AS resultado
+FROM ventas.Feriado WHERE nombre LIKE '%TEST%';
+
+GO
 PRINT '';
 PRINT '==============================================================';
 PRINT ' Testing ABM completado.';

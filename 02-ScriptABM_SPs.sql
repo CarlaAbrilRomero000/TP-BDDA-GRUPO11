@@ -2031,3 +2031,208 @@ BEGIN
     DELETE FROM estadisticas.AreasProtegidasJurisdiccion WHERE id_area = @p_id_area;
 END
 GO
+
+-- ==============================================================
+-- SCHEMA: ventas  |  TABLA: CotizacionDolar
+-- (tabla de consumo de API externa - Entrega 8)
+-- ==============================================================
+
+IF NOT EXISTS (SELECT 1 FROM sys.objects WHERE object_id = OBJECT_ID('ventas.CotizacionDolarInsertar') AND type = 'P')
+    PRINT 'Creando Procedure ventas.CotizacionDolarInsertar...';
+ELSE
+    PRINT 'OK - Procedure ventas.CotizacionDolarInsertar ya existe, se omite creación.';
+GO
+
+CREATE OR ALTER PROCEDURE ventas.CotizacionDolarInsertar
+    @p_moneda              VARCHAR(10),
+    @p_casa                VARCHAR(20),
+    @p_compra              DECIMAL(12,4),
+    @p_venta               DECIMAL(12,4),
+    @p_nombre              VARCHAR(50) = NULL,
+    @p_fecha_actualizacion DATETIME2   = NULL
+AS
+BEGIN
+    SET NOCOUNT ON;
+    DECLARE @errores NVARCHAR(MAX) = N'';
+
+    IF LTRIM(RTRIM(ISNULL(@p_moneda, ''))) = ''
+        SET @errores += N'- La moneda es obligatoria.' + CHAR(13);
+    IF LTRIM(RTRIM(ISNULL(@p_casa, ''))) = ''
+        SET @errores += N'- La casa es obligatoria.' + CHAR(13);
+    IF ISNULL(@p_compra, 0) <= 0
+        SET @errores += N'- El valor de compra debe ser mayor a 0.' + CHAR(13);
+    IF ISNULL(@p_venta, 0) <= 0
+        SET @errores += N'- El valor de venta debe ser mayor a 0.' + CHAR(13);
+
+    IF @errores != N'' THROW 50000, @errores, 1;
+
+    INSERT INTO ventas.CotizacionDolar
+        (moneda, casa, nombre, compra, venta, fecha_actualizacion)
+    VALUES
+        (@p_moneda, @p_casa, @p_nombre, @p_compra, @p_venta, @p_fecha_actualizacion);
+END
+GO
+
+IF NOT EXISTS (SELECT 1 FROM sys.objects WHERE object_id = OBJECT_ID('ventas.CotizacionDolarModificar') AND type = 'P')
+    PRINT 'Creando Procedure ventas.CotizacionDolarModificar...';
+ELSE
+    PRINT 'OK - Procedure ventas.CotizacionDolarModificar ya existe, se omite creación.';
+GO
+
+CREATE OR ALTER PROCEDURE ventas.CotizacionDolarModificar
+    @p_id_cotizacion       INT,
+    @p_moneda              VARCHAR(10),
+    @p_casa                VARCHAR(20),
+    @p_compra              DECIMAL(12,4),
+    @p_venta               DECIMAL(12,4),
+    @p_nombre              VARCHAR(50) = NULL,
+    @p_fecha_actualizacion DATETIME2   = NULL
+AS
+BEGIN
+    SET NOCOUNT ON;
+    DECLARE @errores NVARCHAR(MAX) = N'';
+
+    IF NOT EXISTS (SELECT 1 FROM ventas.CotizacionDolar WHERE id_cotizacion = @p_id_cotizacion)
+        SET @errores += N'- No existe una cotización con el ID indicado.' + CHAR(13);
+    IF LTRIM(RTRIM(ISNULL(@p_moneda, ''))) = ''
+        SET @errores += N'- La moneda es obligatoria.' + CHAR(13);
+    IF LTRIM(RTRIM(ISNULL(@p_casa, ''))) = ''
+        SET @errores += N'- La casa es obligatoria.' + CHAR(13);
+    IF ISNULL(@p_compra, 0) <= 0
+        SET @errores += N'- El valor de compra debe ser mayor a 0.' + CHAR(13);
+    IF ISNULL(@p_venta, 0) <= 0
+        SET @errores += N'- El valor de venta debe ser mayor a 0.' + CHAR(13);
+
+    IF @errores != N'' THROW 50000, @errores, 1;
+
+    UPDATE ventas.CotizacionDolar
+    SET moneda              = @p_moneda,
+        casa                = @p_casa,
+        nombre              = @p_nombre,
+        compra              = @p_compra,
+        venta               = @p_venta,
+        fecha_actualizacion = @p_fecha_actualizacion
+    WHERE id_cotizacion = @p_id_cotizacion;
+END
+GO
+
+IF NOT EXISTS (SELECT 1 FROM sys.objects WHERE object_id = OBJECT_ID('ventas.CotizacionDolarEliminar') AND type = 'P')
+    PRINT 'Creando Procedure ventas.CotizacionDolarEliminar...';
+ELSE
+    PRINT 'OK - Procedure ventas.CotizacionDolarEliminar ya existe, se omite creación.';
+GO
+
+CREATE OR ALTER PROCEDURE ventas.CotizacionDolarEliminar
+    @p_id_cotizacion INT
+AS
+BEGIN
+    SET NOCOUNT ON;
+    DECLARE @errores NVARCHAR(MAX) = N'';
+
+    IF NOT EXISTS (SELECT 1 FROM ventas.CotizacionDolar WHERE id_cotizacion = @p_id_cotizacion)
+        SET @errores += N'- No existe una cotización con el ID indicado.' + CHAR(13);
+
+    IF @errores != N'' THROW 50000, @errores, 1;
+
+    DELETE FROM ventas.CotizacionDolar WHERE id_cotizacion = @p_id_cotizacion;
+END
+GO
+
+-- ==============================================================
+-- SCHEMA: ventas  |  TABLA: Feriado
+-- (tabla de consumo de API externa - Entrega 9)
+-- ==============================================================
+
+IF NOT EXISTS (SELECT 1 FROM sys.objects WHERE object_id = OBJECT_ID('ventas.FeriadoInsertar') AND type = 'P')
+    PRINT 'Creando Procedure ventas.FeriadoInsertar...';
+ELSE
+    PRINT 'OK - Procedure ventas.FeriadoInsertar ya existe, se omite creación.';
+GO
+
+CREATE OR ALTER PROCEDURE ventas.FeriadoInsertar
+    @p_fecha  DATE,
+    @p_nombre VARCHAR(150) = NULL,
+    @p_tipo   VARCHAR(50)  = NULL,
+    @p_anio   SMALLINT     = NULL    -- por defecto, se deriva del año de la fecha
+AS
+BEGIN
+    SET NOCOUNT ON;
+    DECLARE @errores NVARCHAR(MAX) = N'';
+
+    SET @p_anio = ISNULL(@p_anio, YEAR(@p_fecha));
+
+    IF @p_fecha IS NULL
+        SET @errores += N'- La fecha del feriado es obligatoria.' + CHAR(13);
+    IF EXISTS (SELECT 1 FROM ventas.Feriado WHERE fecha = @p_fecha)
+        SET @errores += N'- Ya existe un feriado registrado para esa fecha.' + CHAR(13);
+    IF @p_anio < 2000 OR @p_anio > 2100
+        SET @errores += N'- El año debe estar entre 2000 y 2100.' + CHAR(13);
+
+    IF @errores != N'' THROW 50000, @errores, 1;
+
+    INSERT INTO ventas.Feriado (fecha, nombre, tipo, anio)
+    VALUES (@p_fecha, @p_nombre, @p_tipo, @p_anio);
+END
+GO
+
+IF NOT EXISTS (SELECT 1 FROM sys.objects WHERE object_id = OBJECT_ID('ventas.FeriadoModificar') AND type = 'P')
+    PRINT 'Creando Procedure ventas.FeriadoModificar...';
+ELSE
+    PRINT 'OK - Procedure ventas.FeriadoModificar ya existe, se omite creación.';
+GO
+
+CREATE OR ALTER PROCEDURE ventas.FeriadoModificar
+    @p_id_feriado INT,
+    @p_fecha      DATE,
+    @p_nombre     VARCHAR(150) = NULL,
+    @p_tipo       VARCHAR(50)  = NULL,
+    @p_anio       SMALLINT     = NULL    -- por defecto, se deriva del año de la fecha
+AS
+BEGIN
+    SET NOCOUNT ON;
+    DECLARE @errores NVARCHAR(MAX) = N'';
+
+    SET @p_anio = ISNULL(@p_anio, YEAR(@p_fecha));
+
+    IF NOT EXISTS (SELECT 1 FROM ventas.Feriado WHERE id_feriado = @p_id_feriado)
+        SET @errores += N'- No existe un feriado con el ID indicado.' + CHAR(13);
+    IF @p_fecha IS NULL
+        SET @errores += N'- La fecha del feriado es obligatoria.' + CHAR(13);
+    IF EXISTS (SELECT 1 FROM ventas.Feriado WHERE fecha = @p_fecha AND id_feriado != @p_id_feriado)
+        SET @errores += N'- Ya existe otro feriado registrado para esa fecha.' + CHAR(13);
+    IF @p_anio < 2000 OR @p_anio > 2100
+        SET @errores += N'- El año debe estar entre 2000 y 2100.' + CHAR(13);
+
+    IF @errores != N'' THROW 50000, @errores, 1;
+
+    UPDATE ventas.Feriado
+    SET fecha          = @p_fecha,
+        nombre         = @p_nombre,
+        tipo           = @p_tipo,
+        anio           = @p_anio,
+        fecha_consulta = SYSDATETIME()
+    WHERE id_feriado = @p_id_feriado;
+END
+GO
+
+IF NOT EXISTS (SELECT 1 FROM sys.objects WHERE object_id = OBJECT_ID('ventas.FeriadoEliminar') AND type = 'P')
+    PRINT 'Creando Procedure ventas.FeriadoEliminar...';
+ELSE
+    PRINT 'OK - Procedure ventas.FeriadoEliminar ya existe, se omite creación.';
+GO
+
+CREATE OR ALTER PROCEDURE ventas.FeriadoEliminar
+    @p_id_feriado INT
+AS
+BEGIN
+    SET NOCOUNT ON;
+    DECLARE @errores NVARCHAR(MAX) = N'';
+
+    IF NOT EXISTS (SELECT 1 FROM ventas.Feriado WHERE id_feriado = @p_id_feriado)
+        SET @errores += N'- No existe un feriado con el ID indicado.' + CHAR(13);
+
+    IF @errores != N'' THROW 50000, @errores, 1;
+
+    DELETE FROM ventas.Feriado WHERE id_feriado = @p_id_feriado;
+END
+GO

@@ -371,6 +371,58 @@ ELSE
 GO
 
 -- ==============================================================
+-- TABLAS DE CONSUMO DE APIs EXTERNAS (Entregas 8 y 9)
+-- ==============================================================
+
+-- --------------------------------------------------------------
+-- SCHEMA: ventas  |  TABLA: CotizacionDolar
+-- Histórico de cotizaciones del dólar obtenidas desde la API
+-- externa (caché + auditoría de consultas).
+-- --------------------------------------------------------------
+IF NOT EXISTS (SELECT * FROM sys.tables WHERE name = 'CotizacionDolar' AND schema_id = SCHEMA_ID('ventas'))
+BEGIN
+    PRINT 'Creando tabla ventas.CotizacionDolar...';
+    CREATE TABLE ventas.CotizacionDolar (
+        id_cotizacion       INT IDENTITY(1,1) PRIMARY KEY,
+        moneda              VARCHAR(10)   NOT NULL,
+        casa                VARCHAR(20)   NOT NULL,
+        nombre              VARCHAR(50)   NULL,
+        compra              DECIMAL(12,4) NOT NULL,
+        venta               DECIMAL(12,4) NOT NULL,
+        fecha_actualizacion DATETIME2     NULL,   -- fechaActualizacion informada por la API
+        fecha_consulta      DATETIME2     NOT NULL CONSTRAINT DF_CotizacionDolar_FechaConsulta DEFAULT (SYSDATETIME()),
+        CONSTRAINT CK_CotizacionDolar_Compra CHECK (compra > 0),
+        CONSTRAINT CK_CotizacionDolar_Venta  CHECK (venta  > 0)
+    );
+END
+ELSE
+    PRINT 'OK - Tabla ventas.CotizacionDolar ya existe, se omite creación.';
+GO
+
+-- --------------------------------------------------------------
+-- SCHEMA: ventas  |  TABLA: Feriado
+-- Histórico de feriados obtenidos desde la API externa
+-- (caché + auditoría de consultas). La fecha es única.
+-- --------------------------------------------------------------
+IF NOT EXISTS (SELECT * FROM sys.tables WHERE name = 'Feriado' AND schema_id = SCHEMA_ID('ventas'))
+BEGIN
+    PRINT 'Creando tabla ventas.Feriado...';
+    CREATE TABLE ventas.Feriado (
+        id_feriado     INT IDENTITY(1,1) PRIMARY KEY,
+        fecha          DATE          NOT NULL,
+        nombre         VARCHAR(150)  NULL,   -- nombre informado por la API
+        tipo           VARCHAR(50)   NULL,   -- tipo informado por la API (inamovible, trasladable, etc.)
+        anio           SMALLINT      NOT NULL,
+        fecha_consulta DATETIME2     NOT NULL CONSTRAINT DF_Feriado_FechaConsulta DEFAULT (SYSDATETIME()),
+        CONSTRAINT UQ_Feriado_Fecha UNIQUE (fecha),
+        CONSTRAINT CK_Feriado_Anio CHECK (anio BETWEEN 2000 AND 2100)
+    );
+END
+ELSE
+    PRINT 'OK - Tabla ventas.Feriado ya existe, se omite creación.';
+GO
+
+-- ==============================================================
 -- SCHEMAS: estadisticas e importaciones
 -- (usados por los scripts de importación de Entrega 6)
 -- ==============================================================
