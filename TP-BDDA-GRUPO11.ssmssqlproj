@@ -1,14 +1,14 @@
 <?xml version="1.0"?>
 <SqlWorkbenchSqlProject xmlns:xsd="http://www.w3.org/2001/XMLSchema" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" Name="TP-BDDA-GRUPO11">
   <Items>
-    <LogicalFolder Name="Connections" Type="2" Sorted="true">
+    <LogicalFolder Name="Conexiones" Type="2" Sorted="true">
       <Items>
-        <ConnectionNode Name="localhost\SQLEXPRESS:FEDEPC\fede2">
+        <ConnectionNode Name="localhost\SQLEXPRESS:">
           <Created>2026-06-23T17:05:01.5505736-03:00</Created>
           <Type>SQL</Type>
           <Server>localhost\SQLEXPRESS</Server>
           <UserName />
-          <Authentication>Windows Authentication</Authentication>
+          <Authentication>SQL</Authentication>
           <InitialDB>master</InitialDB>
           <LoginTimeout>15</LoginTimeout>
           <TrustServerCertificate>True</TrustServerCertificate>
@@ -17,9 +17,23 @@
           <ConnectionProtocol>NotSpecified</ConnectionProtocol>
           <ApplicationName>Microsoft SQL Server Management Studio - Query</ApplicationName>
         </ConnectionNode>
+        <ConnectionNode Name="localhost\SQLEXPRESS:DESKTOP-3VIQG7Q\54112">
+          <Created>2026-06-29T17:26:25.4315113-03:00</Created>
+          <Type>SQL</Type>
+          <Server>localhost\SQLEXPRESS</Server>
+          <UserName />
+          <Authentication>Autenticación de Windows</Authentication>
+          <InitialDB />
+          <LoginTimeout>15</LoginTimeout>
+          <TrustServerCertificate>True</TrustServerCertificate>
+          <EncryptionOption>True</EncryptionOption>
+          <ExecutionTimeout>0</ExecutionTimeout>
+          <ConnectionProtocol>NotSpecified</ConnectionProtocol>
+          <ApplicationName>Microsoft SQL Server Management Studio - Consulta</ApplicationName>
+        </ConnectionNode>
       </Items>
     </LogicalFolder>
-    <LogicalFolder Name="Queries" Type="0" Sorted="true">
+    <LogicalFolder Name="Consultas" Type="0" Sorted="true">
       <Items>
         <FileNode Name="01-ScriptCreacionTablasYSchemas.sql">
           <AssociatedConnectionMoniker>8c91a03d-f9b4-46c0-a305-b5dcc79ff907:localhost\SQLEXPRESS:True</AssociatedConnectionMoniker>
@@ -77,7 +91,7 @@
         </FileNode>
       </Items>
     </LogicalFolder>
-    <LogicalFolder Name="Miscellaneous" Type="3" Sorted="true">
+    <LogicalFolder Name="Varios" Type="3" Sorted="true">
       <Items />
     </LogicalFolder>
   </Items>
