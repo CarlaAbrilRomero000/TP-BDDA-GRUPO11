@@ -75,6 +75,42 @@
           <AssociatedConnUserName />
           <FullPath>09-ScriptTesting_Reportes_SPs.sql</FullPath>
         </FileNode>
+        <FileNode Name="10-ScriptSeguridad_Cifrado.sql">
+          <AssociatedConnectionMoniker />
+          <AssociatedConnSrvName />
+          <AssociatedConnUserName />
+          <FullPath>10-ScriptSeguridad_Cifrado.sql</FullPath>
+        </FileNode>
+        <FileNode Name="10-ScriptTesting_Cifrado.sql">
+          <AssociatedConnectionMoniker />
+          <AssociatedConnSrvName />
+          <AssociatedConnUserName />
+          <FullPath>10-ScriptTesting_Cifrado.sql</FullPath>
+        </FileNode>
+        <FileNode Name="11-ScriptSeguridad_Roles.sql">
+          <AssociatedConnectionMoniker />
+          <AssociatedConnSrvName />
+          <AssociatedConnUserName />
+          <FullPath>11-ScriptSeguridad_Roles.sql</FullPath>
+        </FileNode>
+        <FileNode Name="11-ScriptTesting_Roles.sql">
+          <AssociatedConnectionMoniker />
+          <AssociatedConnSrvName />
+          <AssociatedConnUserName />
+          <FullPath>11-ScriptTesting_Roles.sql</FullPath>
+        </FileNode>
+        <FileNode Name="13-ScriptSeed_ImportacionErrores.sql">
+          <AssociatedConnectionMoniker />
+          <AssociatedConnSrvName />
+          <AssociatedConnUserName />
+          <FullPath>13-ScriptSeed_ImportacionErrores.sql</FullPath>
+        </FileNode>
+        <FileNode Name="13-ScriptSeedData.sql">
+          <AssociatedConnectionMoniker />
+          <AssociatedConnSrvName />
+          <AssociatedConnUserName />
+          <FullPath>13-ScriptSeedData.sql</FullPath>
+        </FileNode>
       </Items>
     </LogicalFolder>
     <LogicalFolder Name="Miscellaneous" Type="3" Sorted="true">
