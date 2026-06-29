@@ -1,1 +1,4 @@
 .vs/
+
+# Proyecto de SSMS: contiene conexiones locales por maquina, no se versiona
+TP-BDDA-GRUPO11.ssmssqlproj
