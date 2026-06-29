@@ -1,0 +1,10 @@
+﻿indice_tiempo,region_destino,origen_visitantes,visitas,observaciones
+2024-01-01,Patagonia,no residentes,800,
+2024-02-01,Litoral,residentes,1200,Temporada media
+2024-03-01,Cuyo,residentes,900,Otono
+2024-01-01,Patagonia,residentes,1500,Temporada alta
+ABCD,Norte,residentes,500,Fecha invalida
+2024-04-01,Norte,residentes,-50,Visitas negativas
+2024-05-01,Centro,residentes,muchos,Visitas no numericas
+2024-06-01,,residentes,300,Region vacia
+2024-01-01,Patagonia,residentes,1500,Clave duplicada
