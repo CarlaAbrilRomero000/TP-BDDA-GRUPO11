@@ -1,3 +1,4 @@
+
 /*
 ==============================================================
 Universidad: Universidad Nacional de La Matanza
@@ -8,14 +9,17 @@ Fecha:       29/06/2026
 Descripción: Script de carga (SEED DATA) del juego de datos
              exigido por los Criterios de Aceptación.
 
-             Genera (vía stored procedures, sin tocar tablas
-             directamente):
+             Genera, en su mayoría vía stored procedures (sin tocar
+             tablas directamente):
                - 10 parques
                - 20 guardaparques
                - 20 guías
                - 30 actividades/tours
                - 10 concesiones (vigentes y vencidas)
                - Historial de ventas de entradas
+               - Historial masivo de visitas para Reporte_Visitas
+                 (sección 10; carga directa en ventas.TicketDetalle,
+                  ~330 registros entre 2024 y 2026, con estacionalidad)
 
              Casos obligatorios representados:
                1. Un parque con múltiples actividades simultáneas
@@ -25,7 +29,7 @@ Descripción: Script de carga (SEED DATA) del juego de datos
                   Completo: ventas que igualan su cupo_maximo).
                3. Concesión vigente y vencida.
                (4. Importación con errores parciales -> ver
-                   13-ScriptSeed_ImportacionErrores.sql)
+                   12-ScriptSeed_ImportacionErrores.sql)
 
              Se ejecuta DESPUÉS de los scripts 00–11. Es
              idempotente: si ya fue sembrado (existe el parque
@@ -464,4 +468,212 @@ SELECT CASE WHEN fecha_fin >= CAST(GETDATE() AS DATE) THEN 'VIGENTE' ELSE 'VENCI
        COUNT(*) AS cantidad
 FROM comercial.Concesion
 GROUP BY CASE WHEN fecha_fin >= CAST(GETDATE() AS DATE) THEN 'VIGENTE' ELSE 'VENCIDA' END;
+GO
+
+-- ==============================================================
+-- 10. HISTORIAL MASIVO DE VISITAS PARA dbo.Reporte_Visitas
+--     Carga ~330 registros en ventas.TicketDetalle (entradas)
+--     usando TODOS los parques existentes, distribuidos en
+--     2024-2026, todos los meses y distintas semanas, con
+--     temporada alta (ene/jul/dic) y baja (may/jun), y parques
+--     con distinto volumen de visitas.
+--
+--     A diferencia del resto del seed, esta sección inserta
+--     directamente en las tablas (carga masiva de prueba).
+--     Idempotente igual que el resto del script: si ya hay visitas
+--     sembradas (tickets 'RV-%' / punto_venta '0003') no recarga.
+-- ==============================================================
+GO
+SET NOCOUNT ON;
+
+-- Guarda de idempotencia: si ya se sembraron las visitas, no recargar.
+IF EXISTS (SELECT 1 FROM ventas.Ticket WHERE numero LIKE 'RV-%' AND punto_venta = '0003')
+BEGIN
+    PRINT 'OK - Visitas para Reporte_Visitas ya sembradas. No se vuelve a cargar.';
+    RETURN;
+END
+
+BEGIN TRY
+    BEGIN TRANSACTION;
+
+    -- 10.0 Prerequisitos
+    IF NOT EXISTS (SELECT 1 FROM parques.Parque)
+        THROW 60001, N'No hay parques cargados en parques.Parque.', 1;
+
+    DECLARE @id_tv INT, @id_fp INT;
+
+    IF NOT EXISTS (SELECT 1 FROM ventas.TipoVisitante)
+        INSERT INTO ventas.TipoVisitante (descripcion) VALUES ('General');
+    IF NOT EXISTS (SELECT 1 FROM ventas.FormaPago)
+        INSERT INTO ventas.FormaPago (descripcion) VALUES ('Efectivo');
+
+    SELECT TOP 1 @id_tv = id_tipo_visitante FROM ventas.TipoVisitante ORDER BY id_tipo_visitante;
+    SELECT TOP 1 @id_fp = id_forma_pago     FROM ventas.FormaPago     ORDER BY id_forma_pago;
+
+    -- Asegurar un precio por parque para un id_historial_precio coherente
+    INSERT INTO ventas.HistorialPrecio (precio, fecha_desde, id_parque, id_tipo_visitante)
+    SELECT 5000.00, '2024-01-01', p.id_parque, @id_tv
+    FROM parques.Parque p
+    WHERE NOT EXISTS (SELECT 1 FROM ventas.HistorialPrecio hp WHERE hp.id_parque = p.id_parque);
+
+    -- 10.1 Mapa de precio por parque
+    IF OBJECT_ID('tempdb..#precioParque') IS NOT NULL DROP TABLE #precioParque;
+    SELECT hp.id_parque, hp.id_historial_precio, hp.precio, hp.id_tipo_visitante
+    INTO #precioParque
+    FROM ventas.HistorialPrecio hp
+    JOIN (SELECT id_parque, MIN(id_historial_precio) AS mn
+          FROM ventas.HistorialPrecio GROUP BY id_parque) x
+      ON x.id_parque = hp.id_parque AND x.mn = hp.id_historial_precio;
+
+    -- 10.2 Ponderaciones (parques con distinto peso y meses por temporada)
+    IF OBJECT_ID('tempdb..#pesoParque') IS NOT NULL DROP TABLE #pesoParque;
+    SELECT id_parque,
+           ((ROW_NUMBER() OVER (ORDER BY id_parque) - 1) % 3) + 1 AS peso
+    INTO #pesoParque
+    FROM parques.Parque;
+
+    IF OBJECT_ID('tempdb..#parkPool') IS NOT NULL DROP TABLE #parkPool;
+    SELECT pp.id_parque
+    INTO #parkPool
+    FROM #pesoParque pp
+    JOIN (VALUES (1),(2),(3)) n(k) ON n.k <= pp.peso;
+
+    -- Meses: ALTA (1,7,12) x4, BAJA (5,6) x1, RESTO x2
+    IF OBJECT_ID('tempdb..#monthPool') IS NOT NULL DROP TABLE #monthPool;
+    SELECT m.mes
+    INTO #monthPool
+    FROM (VALUES (1,4),(2,2),(3,2),(4,2),(5,1),(6,1),
+                 (7,4),(8,2),(9,2),(10,2),(11,2),(12,4)) m(mes, rep)
+    JOIN (VALUES (1),(2),(3),(4)) n(k) ON n.k <= m.rep;
+
+    -- 10.3 Generación de visitas (sin duplicados idénticos)
+    IF OBJECT_ID('tempdb..#visitas') IS NOT NULL DROP TABLE #visitas;
+    CREATE TABLE #visitas (id_parque INT NOT NULL, fecha_acceso DATE NOT NULL, cantidad INT NOT NULL);
+
+    IF OBJECT_ID('tempdb..#pseq') IS NOT NULL DROP TABLE #pseq;
+    SELECT id_parque, ROW_NUMBER() OVER (ORDER BY id_parque) AS rn
+    INTO #pseq FROM parques.Parque;
+
+    DECLARE @vp INT, @vm INT, @vy INT, @vd INT, @vc INT, @vf DATE;
+    DECLARE @vk INT, @vnp INT = (SELECT COUNT(*) FROM #pseq);
+    DECLARE @vtarget INT = 330, @viter INT = 0, @vmaxIter INT = 15000;
+
+    -- A.1) cada parque al menos una visita
+    SET @vk = 1;
+    WHILE @vk <= @vnp
+    BEGIN
+        SET @vp = (SELECT id_parque FROM #pseq WHERE rn = @vk);
+        SET @vm = (SELECT TOP 1 mes FROM #monthPool ORDER BY NEWID());
+        SET @vy = 2024 + ABS(CHECKSUM(NEWID())) % 3;
+        SET @vd = 1 + ABS(CHECKSUM(NEWID())) % 28;
+        SET @vc = 1 + ABS(CHECKSUM(NEWID())) % 8;
+        SET @vf = DATEFROMPARTS(@vy, @vm, @vd);
+        IF NOT EXISTS (SELECT 1 FROM #visitas WHERE id_parque = @vp AND fecha_acceso = @vf AND cantidad = @vc)
+            INSERT INTO #visitas (id_parque, fecha_acceso, cantidad) VALUES (@vp, @vf, @vc);
+        SET @vk += 1;
+    END
+
+    -- A.2) cada mes (1..12) al menos una vez
+    SET @vm = 1;
+    WHILE @vm <= 12
+    BEGIN
+        SET @vp = (SELECT TOP 1 id_parque FROM #parkPool ORDER BY NEWID());
+        SET @vy = 2024 + ABS(CHECKSUM(NEWID())) % 3;
+        SET @vd = 1 + ABS(CHECKSUM(NEWID())) % 28;
+        SET @vc = 1 + ABS(CHECKSUM(NEWID())) % 8;
+        SET @vf = DATEFROMPARTS(@vy, @vm, @vd);
+        IF NOT EXISTS (SELECT 1 FROM #visitas WHERE id_parque = @vp AND fecha_acceso = @vf AND cantidad = @vc)
+            INSERT INTO #visitas (id_parque, fecha_acceso, cantidad) VALUES (@vp, @vf, @vc);
+        SET @vm += 1;
+    END
+
+    -- A.3) cada año (2024..2026) al menos una vez
+    SET @vy = 2024;
+    WHILE @vy <= 2026
+    BEGIN
+        SET @vp = (SELECT TOP 1 id_parque FROM #parkPool ORDER BY NEWID());
+        SET @vm = (SELECT TOP 1 mes FROM #monthPool ORDER BY NEWID());
+        SET @vd = 1 + ABS(CHECKSUM(NEWID())) % 28;
+        SET @vc = 1 + ABS(CHECKSUM(NEWID())) % 8;
+        SET @vf = DATEFROMPARTS(@vy, @vm, @vd);
+        IF NOT EXISTS (SELECT 1 FROM #visitas WHERE id_parque = @vp AND fecha_acceso = @vf AND cantidad = @vc)
+            INSERT INTO #visitas (id_parque, fecha_acceso, cantidad) VALUES (@vp, @vf, @vc);
+        SET @vy += 1;
+    END
+
+    -- B) volumen con estacionalidad hasta @vtarget
+    WHILE (SELECT COUNT(*) FROM #visitas) < @vtarget AND @viter < @vmaxIter
+    BEGIN
+        SET @vp = (SELECT TOP 1 id_parque FROM #parkPool ORDER BY NEWID());
+        SET @vm = (SELECT TOP 1 mes FROM #monthPool ORDER BY NEWID());
+        SET @vy = 2024 + ABS(CHECKSUM(NEWID())) % 3;
+        SET @vd = 1 + ABS(CHECKSUM(NEWID())) % 28;
+        SET @vc = 1 + ABS(CHECKSUM(NEWID())) % 8;
+        SET @vf = DATEFROMPARTS(@vy, @vm, @vd);
+        IF NOT EXISTS (SELECT 1 FROM #visitas WHERE id_parque = @vp AND fecha_acceso = @vf AND cantidad = @vc)
+            INSERT INTO #visitas (id_parque, fecha_acceso, cantidad) VALUES (@vp, @vf, @vc);
+        SET @viter += 1;
+    END
+
+    -- 10.4 Tickets contenedores (uno por año) — solo para la FK
+    IF OBJECT_ID('tempdb..#ticketAnio') IS NOT NULL DROP TABLE #ticketAnio;
+    CREATE TABLE #ticketAnio (anio INT, id_ticket INT);
+
+    DECLARE @vanio INT = 2024;
+    WHILE @vanio <= 2026
+    BEGIN
+        INSERT INTO ventas.Ticket (punto_venta, numero, fecha_venta, id_forma_pago, total)
+        VALUES ('0003', CONCAT('RV-', @vanio), DATEFROMPARTS(@vanio, 1, 1), @id_fp, 0);
+        INSERT INTO #ticketAnio (anio, id_ticket) VALUES (@vanio, CAST(SCOPE_IDENTITY() AS INT));
+        SET @vanio += 1;
+    END
+
+    -- 10.5 Volcado a ventas.TicketDetalle (entradas)
+    INSERT INTO ventas.TicketDetalle
+        (id_ticket, id_parque, id_historial_precio, id_tipo_visitante, id_atraccion_tour,
+         fecha_acceso, cantidad, precio_unitario, subtotal)
+    SELECT ta.id_ticket, v.id_parque, pp.id_historial_precio, pp.id_tipo_visitante, NULL,
+           v.fecha_acceso, v.cantidad, pp.precio, v.cantidad * pp.precio
+    FROM #visitas v
+    JOIN #precioParque pp ON pp.id_parque = v.id_parque
+    JOIN #ticketAnio   ta ON ta.anio      = YEAR(v.fecha_acceso);
+
+    UPDATE t
+    SET t.total = x.suma
+    FROM ventas.Ticket t
+    JOIN (SELECT id_ticket, SUM(subtotal) AS suma FROM ventas.TicketDetalle GROUP BY id_ticket) x
+      ON x.id_ticket = t.id_ticket
+    WHERE t.numero LIKE 'RV-%' AND t.punto_venta = '0003';
+
+    DECLARE @vinsertados INT = (SELECT COUNT(*) FROM #visitas);
+    PRINT CONCAT('OK - Visitas sembradas en ventas.TicketDetalle: ', @vinsertados, ' registros.');
+
+    DROP TABLE #precioParque, #pesoParque, #parkPool, #monthPool, #visitas, #pseq, #ticketAnio;
+
+    COMMIT TRANSACTION;
+END TRY
+BEGIN CATCH
+    IF @@TRANCOUNT > 0 ROLLBACK TRANSACTION;
+    THROW;
+END CATCH
+GO
+
+-- Verificación de la sección 10 (los datos se identifican por el ticket 'RV-%')
+PRINT '--- Visitas sembradas (debe estar entre 250 y 400) ---';
+GO
+SELECT COUNT(*) AS detalles_sembrados
+FROM ventas.TicketDetalle td
+JOIN ventas.Ticket t ON t.id_ticket = td.id_ticket
+WHERE t.numero LIKE 'RV-%' AND t.punto_venta = '0003';
+GO
+
+PRINT '--- Distribución por año y mes (estacionalidad) ---';
+GO
+SELECT YEAR(td.fecha_acceso) AS anio, MONTH(td.fecha_acceso) AS mes,
+       COUNT(*) AS registros, SUM(td.cantidad) AS visitas
+FROM ventas.TicketDetalle td
+JOIN ventas.Ticket t ON t.id_ticket = td.id_ticket
+WHERE t.numero LIKE 'RV-%' AND t.punto_venta = '0003'
+GROUP BY YEAR(td.fecha_acceso), MONTH(td.fecha_acceso)
+ORDER BY anio, mes;
 GO
