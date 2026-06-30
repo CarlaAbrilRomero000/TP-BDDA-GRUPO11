@@ -208,7 +208,7 @@ BEGIN
     SET NOCOUNT ON;
     DECLARE @errores       NVARCHAR(MAX) = N'';
     DECLARE @id_concesion  INT;
-    DECLARE @cursor        DATE;
+    DECLARE @fecha_actual  DATE;
     DECLARE @mes           TINYINT;
     DECLARE @anio          SMALLINT;
     DECLARE @fecha_venc    DATE;
@@ -241,12 +241,12 @@ BEGIN
         SET @id_concesion = SCOPE_IDENTITY();
 
         -- Recorrer mes a mes desde fecha_inicio hasta fecha_fin
-        SET @cursor = DATEFROMPARTS(YEAR(@p_fecha_inicio), MONTH(@p_fecha_inicio), 1);
+        SET @fecha_actual = DATEFROMPARTS(YEAR(@p_fecha_inicio), MONTH(@p_fecha_inicio), 1);
 
-        WHILE @cursor <= DATEFROMPARTS(YEAR(@p_fecha_fin), MONTH(@p_fecha_fin), 1)
+        WHILE @fecha_actual <= DATEFROMPARTS(YEAR(@p_fecha_fin), MONTH(@p_fecha_fin), 1)
         BEGIN
-            SET @mes  = MONTH(@cursor);
-            SET @anio = YEAR(@cursor);
+            SET @mes  = MONTH(@fecha_actual);
+            SET @anio = YEAR(@fecha_actual);
 
             -- Vencimiento: día @p_dia_vencimiento del mes siguiente
             SET @fecha_venc = DATEFROMPARTS(
@@ -261,7 +261,7 @@ BEGIN
                 (@id_concesion, @mes, @anio, @p_canon_mensual, 'PENDIENTE', @fecha_venc);
 
             SET @meses_gen += 1;
-            SET @cursor = DATEADD(MONTH, 1, @cursor);
+            SET @fecha_actual = DATEADD(MONTH, 1, @fecha_actual);
         END;
 
         COMMIT TRANSACTION;
