@@ -90,17 +90,17 @@ GO
 --     por lo que el descifrado del DNI le será denegado.
 --     Las grants de reportes se aplican solo si el SP existe
 --     (los reportes provienen de los scripts 07 y 08).
-DECLARE @reportes TABLE (sp SYSNAME);
+DECLARE @reportes TABLE (sp SYSNAME, id INT IDENTITY(1,1));
 INSERT INTO @reportes (sp) VALUES
     ('dbo.Reporte_Visitas'), ('dbo.Ingresos_Parque'), ('dbo.Deudores_XML'),
     ('dbo.Matriz_Visitas'), ('dbo.Parques_Concesiones_XML'), ('dbo.Ingresos_Parque_USD');
 
 DECLARE @sp SYSNAME, @sql NVARCHAR(300);
-DECLARE cur CURSOR LOCAL FAST_FORWARD FOR SELECT sp FROM @reportes;
-OPEN cur;
-FETCH NEXT FROM cur INTO @sp;
-WHILE @@FETCH_STATUS = 0
+
+DECLARE @entero INT = 1;
+WHILE @entero <= (SELECT MAX(id) FROM @reportes)
 BEGIN
+    SET @sp = (SELECT sp FROM @reportes WHERE id = @entero);
     IF OBJECT_ID(@sp, 'P') IS NOT NULL
     BEGIN
         SET @sql = 'GRANT EXECUTE ON OBJECT::' + @sp + ' TO rol_consultas;';
@@ -108,9 +108,8 @@ BEGIN
     END
     ELSE
         PRINT 'AVISO - No existe el SP de reporte ' + @sp + ' (correr scripts 07/08); se omite la grant.';
-    FETCH NEXT FROM cur INTO @sp;
+    SET @entero = @entero + 1;
 END
-CLOSE cur; DEALLOCATE cur;
 
 GRANT EXECUTE ON OBJECT::personal.GuardaparqueConsultar TO rol_consultas;
 GRANT EXECUTE ON OBJECT::turismo.GuiaConsultar          TO rol_consultas;
