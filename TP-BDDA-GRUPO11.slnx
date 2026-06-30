@@ -6,6 +6,7 @@
   <Folder Name="/Solution Items/" />
   <Folder Name="/Querys/">
     <File Path="01-ScriptCreacionTablasYSchemas.sql" />
+    <File Path="01B-ScriptFunciones.sql" />
     <File Path="02-ScriptABM_SPs.sql" />
     <File Path="03-ScriptLogicaNegocio_SPs.sql" />
     <File Path="04-ScriptEstadisticasVisitantes.sql" />

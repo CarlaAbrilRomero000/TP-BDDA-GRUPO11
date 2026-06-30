@@ -26,23 +26,20 @@ Descripción: Consumo de API externa de cotización de moneda extranjera
 
              Objetos incluidos:
              NOTA: La tabla ventas.CotizacionDolar se crea en el script 01
-             y sus operaciones ABM están en el script 02. Este script solo
-             contiene la lógica de consumo de la API y los reportes.
+             y sus operaciones ABM están en el script 02. Las funciones
+             ventas.fn_CotizacionVigente y ventas.fn_ConvertirArsAUsd se
+             crean en el script 01B-ScriptFunciones.sql (que debe ejecutarse
+             antes que éste). Este script solo contiene la lógica de consumo
+             de la API y los reportes.
 
              1. ventas.CotizacionDolarActualizar (SP)
                 Consume la API, interpreta el JSON y registra una nueva
                 cotización. Retorna la fila insertada.
 
-             2. ventas.fn_CotizacionVigente (función)
-                Devuelve el valor de venta de la última cotización registrada.
-
-             3. ventas.fn_ConvertirArsAUsd (función)
-                Convierte un monto en pesos a dólares usando la cotización
-                vigente (valor de venta).
-
-             4. dbo.Ingresos_Parque_USD (SP)
+             2. dbo.Ingresos_Parque_USD (SP)
                 Variante del reporte de ingresos que agrega las columnas
-                equivalentes en dólares.
+                equivalentes en dólares. Usa las funciones de cotización
+                creadas en el script 01B.
 =============================================================================
 */
 
@@ -219,58 +216,17 @@ PRINT 'OK - Store Procedure ventas.CotizacionDolarActualizar creado/actualizado 
 GO
 
 -- =========================================================================
--- 3. FUNCIÓN: ventas.fn_CotizacionVigente
---    Devuelve el valor de venta de la última cotización registrada.
---    Retorna NULL si todavía no se consultó ninguna cotización.
--- =========================================================================
-PRINT 'Creando o actualizando función ventas.fn_CotizacionVigente...';
-GO
-CREATE OR ALTER FUNCTION ventas.fn_CotizacionVigente()
-RETURNS DECIMAL(12,4)
-AS
-BEGIN
-    DECLARE @venta DECIMAL(12,4);
-
-    SELECT TOP 1 @venta = venta
-    FROM ventas.CotizacionDolar
-    ORDER BY fecha_consulta DESC, id_cotizacion DESC;
-
-    RETURN @venta;
-END
-GO
-PRINT 'OK - Función ventas.fn_CotizacionVigente creada/actualizada con éxito.';
-GO
-
--- =========================================================================
--- 4. FUNCIÓN: ventas.fn_ConvertirArsAUsd
---    Convierte un monto en pesos a dólares usando la cotización vigente
---    (valor de venta). Retorna NULL si no hay cotización disponible.
--- =========================================================================
-PRINT 'Creando o actualizando función ventas.fn_ConvertirArsAUsd...';
-GO
-CREATE OR ALTER FUNCTION ventas.fn_ConvertirArsAUsd
-(
-    @p_monto_ars DECIMAL(18,2)
-)
-RETURNS DECIMAL(18,2)
-AS
-BEGIN
-    DECLARE @venta DECIMAL(12,4) = ventas.fn_CotizacionVigente();
-
-    IF @venta IS NULL OR @venta = 0 OR @p_monto_ars IS NULL
-        RETURN NULL;
-
-    RETURN CAST(@p_monto_ars / @venta AS DECIMAL(18,2));
-END
-GO
-PRINT 'OK - Función ventas.fn_ConvertirArsAUsd creada/actualizada con éxito.';
-GO
-
--- =========================================================================
--- 5. SP: dbo.Ingresos_Parque_USD
+-- 3. SP: dbo.Ingresos_Parque_USD
 --    Variante del reporte de ingresos por parque/semana/mes/año que agrega
 --    las columnas equivalentes en dólares (usando la cotización vigente).
+--
+--    Las funciones ventas.fn_CotizacionVigente y ventas.fn_ConvertirArsAUsd
+--    se crean en el script 01B-ScriptFunciones.sql. Se valida que existan.
 -- =========================================================================
+IF OBJECT_ID('ventas.fn_CotizacionVigente', 'FN') IS NULL
+   OR OBJECT_ID('ventas.fn_ConvertirArsAUsd', 'FN') IS NULL
+    THROW 50017, N'Faltan las funciones de cotización. Ejecute primero el script 01B-ScriptFunciones.sql.', 1;
+GO
 PRINT 'Creando o actualizando Store Procedure dbo.Ingresos_Parque_USD...';
 GO
 CREATE OR ALTER PROCEDURE dbo.Ingresos_Parque_USD

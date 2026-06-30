@@ -428,6 +428,11 @@ PRINT '';
 PRINT '-------------------------------------------------------------------------';
 PRINT 'Test 1: Reporte de visitas por semana, mes y año, por parque';
 PRINT '-------------------------------------------------------------------------';
+-- RESULTADO ESPERADO: una fila por parque/año/mes/semana con la cantidad de
+-- visitas (suma de cantidades de los TicketDetalle). Debe incluir ambos
+-- parques REP-TEST (Iguazú y Nahuel Huapi) y discriminar los accesos de 2025
+-- y 2026 cargados en la preparación. El total de visitas debe coincidir con
+-- la suma de las cantidades de los 13 detalles insertados.
 EXEC dbo.Reporte_Visitas;
 GO
 
@@ -435,6 +440,12 @@ PRINT '';
 PRINT '-------------------------------------------------------------------------';
 PRINT 'Test 2: Ingresos por parque por semana, mes y año (Consolidado)';
 PRINT '-------------------------------------------------------------------------';
+-- RESULTADO ESPERADO: una fila por parque/año/mes/semana con los ingresos
+-- discriminados en Entradas, Tours y Concesiones, y el Total_General como su
+-- suma. Las entradas/tours provienen de los subtotales de TicketDetalle y las
+-- concesiones de los PagoCanon registrados (enero $50000 + febrero $20000 de
+-- la Concesión 1). El gran total de entradas+tours debe coincidir con la suma
+-- de los subtotales de los 13 detalles.
 EXEC dbo.Ingresos_Parque;
 GO
 
@@ -442,6 +453,12 @@ PRINT '';
 PRINT '-------------------------------------------------------------------------';
 PRINT 'Test 3: Deudores de Concesiones (Formato XML)';
 PRINT '-------------------------------------------------------------------------';
+-- RESULTADO ESPERADO: un documento XML con las obligaciones con deuda. Según
+-- los datos cargados deben figurar exactamente 3 deudas:
+--   - Concesión 1 / Febrero 2026: deuda $30000 (pago parcial de $20000)
+--   - Concesión 1 / Marzo 2026:   deuda $50000 (PENDIENTE sin pagos)
+--   - Concesión 2 / Enero 2026:   deuda $30000 (VENCIDO sin pagos)
+-- NO debe aparecer Enero de la Concesión 1 (quedó PAGADO, deuda 0).
 EXEC dbo.Deudores_XML;
 GO
 
@@ -449,6 +466,11 @@ PRINT '';
 PRINT '-------------------------------------------------------------------------';
 PRINT 'Test 4: Matriz de visitas (Tabla Cruzada / Pivot de meses)';
 PRINT '-------------------------------------------------------------------------';
+-- RESULTADO ESPERADO: una tabla cruzada (pivot) con una fila por parque y una
+-- columna por mes (Enero..Diciembre), donde cada celda es la cantidad de
+-- visitas de ese parque en ese mes. Los meses sin accesos deben mostrar 0 (o
+-- NULL según la implementación). La suma de toda la matriz debe coincidir con
+-- el total de visitas del Test 1.
 EXEC dbo.Matriz_Visitas;
 GO
 
@@ -456,6 +478,10 @@ PRINT '';
 PRINT '-------------------------------------------------------------------------';
 PRINT 'Test 5: Parques y Concesiones (Formato XML Anidado)';
 PRINT '-------------------------------------------------------------------------';
+-- RESULTADO ESPERADO: un XML anidado con cada parque y, dentro, sus
+-- concesiones. Para los datos REP-TEST: el Parque 1 (Iguazú) con la concesión
+-- "Gastronomía REP-TEST" y el Parque 2 (Nahuel Huapi) con "Alquiler de kayaks
+-- REP-TEST". Cada parque debe anidar su(s) concesión(es) como elementos hijos.
 EXEC dbo.Parques_Concesiones_XML;
 GO
 

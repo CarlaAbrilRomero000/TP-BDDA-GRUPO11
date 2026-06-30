@@ -31,22 +31,20 @@ Descripción: Consumo de API externa de feriados de Argentina para el cálculo
 
              Objetos incluidos:
              NOTA: La tabla ventas.Feriado se crea en el script 01 y sus
-             operaciones ABM están en el script 02. Este script solo contiene
-             la lógica de consumo de la API y el cálculo de entradas.
+             operaciones ABM están en el script 02. Las funciones
+             ventas.fn_EsFeriado y ventas.fn_PrecioEntradaConFeriado se crean
+             en el script 01B-ScriptFunciones.sql (que debe ejecutarse antes
+             que éste). Este script solo contiene la lógica de consumo de la
+             API y el cálculo de entradas.
 
              1. ventas.FeriadosActualizar (SP)
                 Consume la API para un año dado, interpreta el JSON y
                 sincroniza (upsert) los feriados. Retorna las filas vigentes.
 
-             2. ventas.fn_EsFeriado (función)
-                Indica si una fecha dada es feriado registrado.
-
-             3. ventas.fn_PrecioEntradaConFeriado (función)
-                Aplica el recargo por feriado al valor de una entrada.
-
-             4. ventas.CalcularValorEntrada (SP)
+             2. ventas.CalcularValorEntrada (SP)
                 Calcula el valor final de una entrada para un parque, tipo de
-                visitante y fecha, considerando el recargo por feriado.
+                visitante y fecha, considerando el recargo por feriado. Usa
+                las funciones de feriado creadas en el script 01B.
 =============================================================================
 */
 
@@ -237,70 +235,19 @@ PRINT 'OK - Store Procedure ventas.FeriadosActualizar creado/actualizado con éx
 GO
 
 -- =========================================================================
--- 3. FUNCIÓN: ventas.fn_EsFeriado
---    Devuelve 1 si la fecha indicada es un feriado registrado, 0 en caso
---    contrario. Retorna 0 si la fecha es NULL.
--- =========================================================================
-PRINT 'Creando o actualizando función ventas.fn_EsFeriado...';
-GO
-CREATE OR ALTER FUNCTION ventas.fn_EsFeriado
-(
-    @p_fecha DATE
-)
-RETURNS BIT
-AS
-BEGIN
-    IF @p_fecha IS NULL
-        RETURN 0;
-
-    IF EXISTS (SELECT 1 FROM ventas.Feriado WHERE fecha = @p_fecha)
-        RETURN 1;
-
-    RETURN 0;
-END
-GO
-PRINT 'OK - Función ventas.fn_EsFeriado creada/actualizada con éxito.';
-GO
-
--- =========================================================================
--- 4. FUNCIÓN: ventas.fn_PrecioEntradaConFeriado
---    Aplica el recargo por feriado al valor base de una entrada. Si la
---    fecha es feriado, incrementa el precio en RECARGO_FERIADO (20%); de lo
---    contrario, devuelve el precio sin cambios. Retorna NULL si el precio
---    es NULL.
--- =========================================================================
-PRINT 'Creando o actualizando función ventas.fn_PrecioEntradaConFeriado...';
-GO
-CREATE OR ALTER FUNCTION ventas.fn_PrecioEntradaConFeriado
-(
-    @p_precio_base DECIMAL(12,2),
-    @p_fecha       DATE
-)
-RETURNS DECIMAL(12,2)
-AS
-BEGIN
-    -- Recargo aplicado sobre el valor de la entrada en días feriados (20%).
-    DECLARE @recargo DECIMAL(5,4) = 0.20;
-
-    IF @p_precio_base IS NULL
-        RETURN NULL;
-
-    IF ventas.fn_EsFeriado(@p_fecha) = 1
-        RETURN CAST(@p_precio_base * (1 + @recargo) AS DECIMAL(12,2));
-
-    RETURN @p_precio_base;
-END
-GO
-PRINT 'OK - Función ventas.fn_PrecioEntradaConFeriado creada/actualizada con éxito.';
-GO
-
--- =========================================================================
--- 5. SP: ventas.CalcularValorEntrada
+-- 3. SP: ventas.CalcularValorEntrada
 --    Calcula el valor final de una entrada para un parque, tipo de
 --    visitante y fecha de acceso. Toma el precio vigente de
 --    ventas.HistorialPrecio (el último ajuste cuya fecha_desde es menor o
 --    igual a la fecha de acceso) y le aplica el recargo por feriado.
+--
+--    Las funciones ventas.fn_EsFeriado y ventas.fn_PrecioEntradaConFeriado
+--    se crean en el script 01B-ScriptFunciones.sql. Se valida que existan.
 -- =========================================================================
+IF OBJECT_ID('ventas.fn_EsFeriado', 'FN') IS NULL
+   OR OBJECT_ID('ventas.fn_PrecioEntradaConFeriado', 'FN') IS NULL
+    THROW 50030, N'Faltan las funciones de feriado. Ejecute primero el script 01B-ScriptFunciones.sql.', 1;
+GO
 PRINT 'Creando o actualizando Store Procedure ventas.CalcularValorEntrada...';
 GO
 CREATE OR ALTER PROCEDURE ventas.CalcularValorEntrada
