@@ -26,9 +26,9 @@ Descripción: Consumo de API externa de cotización de moneda extranjera
 
              Objetos incluidos:
              NOTA: La tabla ventas.CotizacionDolar se crea en el script 00
-             y sus operaciones ABM están en el script 02. Las funciones
+             y sus operaciones ABM están en el script 01. Las funciones
              ventas.fn_CotizacionVigente y ventas.fn_ConvertirArsAUsd se
-             crean en el script 01-ScriptFunciones.sql (que debe ejecutarse
+             crean en el script 02-ScriptFunciones.sql (que debe ejecutarse
              antes que éste). Este script solo contiene la lógica de consumo
              de la API y los reportes.
 
@@ -39,7 +39,7 @@ Descripción: Consumo de API externa de cotización de moneda extranjera
              2. dbo.Ingresos_Parque_USD (SP)
                 Variante del reporte de ingresos que agrega las columnas
                 equivalentes en dólares. Usa las funciones de cotización
-                creadas en el script 01.
+                creadas en el script 02.
 =============================================================================
 */
 
@@ -77,7 +77,7 @@ GO
 -- 1. TABLA: ventas.CotizacionDolar
 --    La tabla se crea en el script 00-ScriptCreacionTablasYSchemas.sql
 --    (sección "TABLAS DE CONSUMO DE APIs EXTERNAS") y sus operaciones ABM
---    están en el script 02-ScriptABM_SPs.sql. Debe existir antes de
+--    están en el script 01-ScriptABM_SPs.sql. Debe existir antes de
 --    ejecutar este script.
 -- =========================================================================
 IF NOT EXISTS (SELECT 1 FROM sys.tables WHERE name = 'CotizacionDolar' AND schema_id = SCHEMA_ID('ventas'))
@@ -221,11 +221,11 @@ GO
 --    las columnas equivalentes en dólares (usando la cotización vigente).
 --
 --    Las funciones ventas.fn_CotizacionVigente y ventas.fn_ConvertirArsAUsd
---    se crean en el script 01-ScriptFunciones.sql. Se valida que existan.
+--    se crean en el script 02-ScriptFunciones.sql. Se valida que existan.
 -- =========================================================================
 IF OBJECT_ID('ventas.fn_CotizacionVigente', 'FN') IS NULL
    OR OBJECT_ID('ventas.fn_ConvertirArsAUsd', 'FN') IS NULL
-    THROW 50017, N'Faltan las funciones de cotización. Ejecute primero el script 01-ScriptFunciones.sql.', 1;
+    THROW 50017, N'Faltan las funciones de cotización. Ejecute primero el script 02-ScriptFunciones.sql.', 1;
 GO
 PRINT 'Creando o actualizando Store Procedure dbo.Ingresos_Parque_USD...';
 GO

@@ -4,20 +4,22 @@ Universidad: Universidad Nacional de La Matanza
 Materia:     3641 - Bases de Datos Aplicada
 Grupo:       11
 Integrantes: Federico Augusto Cusa Ortiz, Carla Abril Romero, Lautaro Garat
-Archivo:     01B-ScriptFunciones.sql
+Archivo:     02-ScriptFunciones.sql
 Descripción: Creación centralizada de las FUNCIONES escalares del modelo.
 
              Siguiendo la consigna ("un script para las tablas, otro para los
              SP, otro para las vistas/funciones"), todas las funciones se
-             agrupan acá. El script se ejecuta JUSTO DESPUÉS del 01 (creación
-             de tablas) y ANTES de los scripts de SP que las consumen
-             (08 - Cotización y 09 - Feriados), porque las funciones solo
-             dependen de tablas creadas en el script 01.
+             agrupan acá. El script se ejecuta DESPUÉS del 00 (creación de
+             tablas) y del 01 (ABM), y ANTES de los scripts de SP que las
+             consumen (08 - Cotización y 09 - Feriados). Las funciones solo
+             dependen de tablas creadas en el script 00; el 01 (ABM) se ubica
+             antes para que el testing de funciones (02-ScriptTesting_Funciones)
+             pueda usar los SP de ABM al cargar/limpiar sus datos de prueba.
 
              Orden de ejecución dentro de la solución:
-               01  - Creación de tablas y schemas
-               01B - Este script (funciones)        <--
-               02  - ABM (SPs)
+               00  - Creación de tablas y schemas
+               01  - ABM (SPs)
+               02  - Este script (funciones)        <--
                ...
                08  - API Cotización (SPs que usan fn_CotizacionVigente / fn_ConvertirArsAUsd)
                09  - API Feriados   (SPs que usan fn_EsFeriado / fn_PrecioEntradaConFeriado)
@@ -44,13 +46,13 @@ GO
 
 -- =========================================================================
 -- 0. VALIDACIÓN DE DEPENDENCIAS
---    Las funciones consultan tablas creadas en el script 01. Si no existen,
+--    Las funciones consultan tablas creadas en el script 00. Si no existen,
 --    se aborta con un mensaje claro.
 -- =========================================================================
 IF NOT EXISTS (SELECT 1 FROM sys.tables WHERE name = 'CotizacionDolar' AND schema_id = SCHEMA_ID('ventas'))
-    THROW 50100, N'Falta la tabla ventas.CotizacionDolar. Ejecute primero el script 01-ScriptCreacionTablasYSchemas.sql.', 1;
+    THROW 50100, N'Falta la tabla ventas.CotizacionDolar. Ejecute primero el script 00-ScriptCreacionTablasYSchemas.sql.', 1;
 IF NOT EXISTS (SELECT 1 FROM sys.tables WHERE name = 'Feriado' AND schema_id = SCHEMA_ID('ventas'))
-    THROW 50101, N'Falta la tabla ventas.Feriado. Ejecute primero el script 01-ScriptCreacionTablasYSchemas.sql.', 1;
+    THROW 50101, N'Falta la tabla ventas.Feriado. Ejecute primero el script 00-ScriptCreacionTablasYSchemas.sql.', 1;
 GO
 
 -- =========================================================================

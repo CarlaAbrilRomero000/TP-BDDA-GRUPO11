@@ -31,9 +31,9 @@ Descripción: Consumo de API externa de feriados de Argentina para el cálculo
 
              Objetos incluidos:
              NOTA: La tabla ventas.Feriado se crea en el script 00 y sus
-             operaciones ABM están en el script 02. Las funciones
+             operaciones ABM están en el script 01. Las funciones
              ventas.fn_EsFeriado y ventas.fn_PrecioEntradaConFeriado se crean
-             en el script 01-ScriptFunciones.sql (que debe ejecutarse antes
+             en el script 02-ScriptFunciones.sql (que debe ejecutarse antes
              que éste). Este script solo contiene la lógica de consumo de la
              API y el cálculo de entradas.
 
@@ -44,7 +44,7 @@ Descripción: Consumo de API externa de feriados de Argentina para el cálculo
              2. ventas.CalcularValorEntrada (SP)
                 Calcula el valor final de una entrada para un parque, tipo de
                 visitante y fecha, considerando el recargo por feriado. Usa
-                las funciones de feriado creadas en el script 01.
+                las funciones de feriado creadas en el script 02.
 =============================================================================
 */
 
@@ -82,7 +82,7 @@ GO
 -- 1. TABLA: ventas.Feriado
 --    La tabla se crea en el script 00-ScriptCreacionTablasYSchemas.sql
 --    (sección "TABLAS DE CONSUMO DE APIs EXTERNAS") y sus operaciones ABM
---    están en el script 02-ScriptABM_SPs.sql. Debe existir antes de
+--    están en el script 01-ScriptABM_SPs.sql. Debe existir antes de
 --    ejecutar este script.
 -- =========================================================================
 IF NOT EXISTS (SELECT 1 FROM sys.tables WHERE name = 'Feriado' AND schema_id = SCHEMA_ID('ventas'))
@@ -242,11 +242,11 @@ GO
 --    igual a la fecha de acceso) y le aplica el recargo por feriado.
 --
 --    Las funciones ventas.fn_EsFeriado y ventas.fn_PrecioEntradaConFeriado
---    se crean en el script 01-ScriptFunciones.sql. Se valida que existan.
+--    se crean en el script 02-ScriptFunciones.sql. Se valida que existan.
 -- =========================================================================
 IF OBJECT_ID('ventas.fn_EsFeriado', 'FN') IS NULL
    OR OBJECT_ID('ventas.fn_PrecioEntradaConFeriado', 'FN') IS NULL
-    THROW 50030, N'Faltan las funciones de feriado. Ejecute primero el script 01-ScriptFunciones.sql.', 1;
+    THROW 50030, N'Faltan las funciones de feriado. Ejecute primero el script 02-ScriptFunciones.sql.', 1;
 GO
 PRINT 'Creando o actualizando Store Procedure ventas.CalcularValorEntrada...';
 GO

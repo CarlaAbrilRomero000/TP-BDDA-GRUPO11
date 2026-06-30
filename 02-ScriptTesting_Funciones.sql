@@ -4,9 +4,9 @@ Universidad: Universidad Nacional de La Matanza
 Materia:     3641 - Bases de Datos Aplicada
 Grupo:       11
 Integrantes: Federico Augusto Cusa Ortiz, Carla Abril Romero, Lautaro Garat
-Archivo:     01-ScriptTesting_Funciones.sql
+Archivo:     02-ScriptTesting_Funciones.sql
 Descripción: Pruebas de las 4 funciones escalares creadas en el script
-             01-ScriptFunciones.sql:
+             02-ScriptFunciones.sql:
                - ventas.fn_CotizacionVigente()
                - ventas.fn_ConvertirArsAUsd(@ars)
                - ventas.fn_EsFeriado(@fecha)
@@ -21,8 +21,8 @@ Descripción: Pruebas de las 4 funciones escalares creadas en el script
 
              Requisitos previos (orden de ejecución):
                00 - Creación de tablas y schemas
-               01 - Funciones escalares (objetos bajo prueba)
-               02 - ABM (SPs usados para cargar/limpiar los datos de prueba)
+               01 - ABM (SPs usados para cargar/limpiar los datos de prueba)
+               02 - Funciones escalares (objetos bajo prueba)
 
              Datos de prueba (sentinelas para poder limpiarlos):
                - Cotización: nombre = 'FN-TEST', venta = 1000.0000
