@@ -5,8 +5,8 @@
   </Configurations>
   <Folder Name="/Solution Items/" />
   <Folder Name="/Querys/">
-    <File Path="01-ScriptCreacionTablasYSchemas.sql" />
-    <File Path="01B-ScriptFunciones.sql" />
+    <File Path="00-ScriptCreacionTablasYSchemas.sql" />
+    <File Path="01-ScriptFunciones.sql" />
     <File Path="02-ScriptABM_SPs.sql" />
     <File Path="03-ScriptLogicaNegocio_SPs.sql" />
     <File Path="04-ScriptEstadisticasVisitantes.sql" />
@@ -24,6 +24,7 @@
     <File Path="../../../../Downloads/04-ScriptTestingEstadisticasVisitantes.sql" />
     <File Path="../../../../Downloads/05-ScriptTestingOrganizacionesDistinguidas.sql" />
     <File Path="../../../../Downloads/06-ScriptTestingAreasProtegidas.sql" />
+    <File Path="01-ScriptTesting_Funciones.sql" />
     <File Path="02-ScriptTestingABM.sql" />
     <File Path="03-ScriptTestingLogicaNegocio.sql" />
     <File Path="07-ScriptTestingReportes.sql" />

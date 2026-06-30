@@ -9,7 +9,7 @@ Descripción: Pruebas del consumo de la API de cotización de moneda extranjera
              (DolarAPI) y de la conversión de montos a dólares.
 
              Requisitos previos:
-             - Ejecutar el script 01B (funciones) y el script 08 (SPs de
+             - Ejecutar el script 01 (funciones) y el script 08 (SPs de
                cotización) para crear los objetos involucrados.
              - El servidor debe tener salida a Internet (HTTPS) y OLE
                Automation habilitado.

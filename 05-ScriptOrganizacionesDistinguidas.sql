@@ -16,7 +16,7 @@ Descripción: Entrega 6 - Carga de organizaciones distinguidas
 
              Nota: La tabla estadisticas.OrganizacionesDistinguidas,
              sus índices y estadisticas.ErroresImportacion se crean
-             en 01-ScriptCreacionTablasYSchemas.sql.
+             en 00-ScriptCreacionTablasYSchemas.sql.
 
              Clave de unicidad / upsert:
                  organizacion + calle + numero

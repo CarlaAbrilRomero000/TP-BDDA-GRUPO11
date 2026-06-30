@@ -18,7 +18,7 @@ Descripción: Entrega 6 - Carga histórica de estadísticas de
              Nota: Los schemas 'estadisticas' e 'importaciones',
              las tablas estadisticas.VisitantesParques y
              estadisticas.ErroresImportacion se crean en
-             01-ScriptCreacionTablasYSchemas.sql.
+             00-ScriptCreacionTablasYSchemas.sql.
 
              Clave de unicidad / upsert:
                  indice_tiempo + region_destino + origen_visitantes

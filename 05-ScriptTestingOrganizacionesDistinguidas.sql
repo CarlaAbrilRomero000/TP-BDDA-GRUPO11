@@ -9,7 +9,7 @@ Descripción: Script de pruebas para
              importaciones.ImportarOrganizacionesDistinguidas.
 
              Orden de ejecución:
-               1. 01-ScriptCreacionTablasYSchemas.sql
+               1. 00-ScriptCreacionTablasYSchemas.sql
                2. 02-ScriptABM_SPs.sql
                3. 03-ScriptLogicaNegocio_SPs.sql
                4. 04-ScriptEstadisticasVisitantes.sql

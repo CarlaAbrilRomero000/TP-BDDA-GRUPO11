@@ -17,7 +17,7 @@ Descripción: Entrega 6 - Carga de áreas protegidas por jurisdicción
              Nota: Los schemas 'estadisticas' e 'importaciones',
              las tablas estadisticas.AreasProtegidasJurisdiccion y
              estadisticas.ErroresImportacion se crean en
-             01-ScriptCreacionTablasYSchemas.sql.
+             00-ScriptCreacionTablasYSchemas.sql.
 
              Clave de unicidad / upsert:
                  jurisdiccion

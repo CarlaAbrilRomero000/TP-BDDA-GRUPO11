@@ -11,7 +11,7 @@ Descripción: Entrega 8 - Seguridad. Script de MODIFICACIÓN que
              turismo.Guia, y sus SPs ABM).
 
              El script está pensado para correr DESPUÉS de los
-             scripts 01-09. Realiza una demostración guiada:
+             scripts 00-09. Realiza una demostración guiada:
                1) Muestra el DNI en texto plano (ANTES).
                2) Crea los objetos criptográficos.
                3) Agrega columnas cifradas y migra los datos.
