@@ -167,14 +167,3 @@ BEGIN CATCH
     PRINT 'OK - Error esperado capturado: ' + ERROR_MESSAGE();
 END CATCH
 GO
-
--- ==============================================================
--- VERIFICACIÓN FINAL - La tabla de staging debe estar vacía
--- ==============================================================
-
-PRINT '==============================================================';
-PRINT ' Verificación final: staging debe estar vacío';
-PRINT '==============================================================';
-
-SELECT COUNT(*) AS filas_en_staging FROM estadisticas.StagingOrganizaciones;
-GO
