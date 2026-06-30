@@ -27,7 +27,7 @@ Descripción: Script de carga (SEED DATA) del juego de datos
                (4. Importación con errores parciales -> ver
                    13-ScriptSeed_ImportacionErrores.sql)
 
-             Se ejecuta DESPUÉS de los scripts 01–11. Es
+             Se ejecuta DESPUÉS de los scripts 00–11. Es
              idempotente: si ya fue sembrado (existe el parque
              centinela SEED-PN01) no vuelve a cargar.
 
